@@ -1,0 +1,47 @@
+import { useEffect, useState } from "react";
+import QRCode from "qrcode.react";
+import { API_BASE_URL } from "../../config/api";
+
+export default function LiveQR() {
+  const [qrCode, setQrCode] = useState("");
+  const [expiresIn, setExpiresIn] = useState(30);
+
+  useEffect(() => {
+    const fetchQR = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/student/qr/current`);
+        const data = await res.json();
+
+        if (res.ok) {
+          setQrCode(data.qrCode || "");
+          setExpiresIn(data.expiresIn ?? 30);
+        }
+      } catch (err) {
+        console.error("QR fetch error:", err);
+      }
+    };
+
+    fetchQR();
+
+    const interval = setInterval(fetchQR, 1000); // auto refresh
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-white">
+      <h1 className="text-3xl font-bold text-blue-700 mb-4">
+        Classroom QR (Auto Refresh)
+      </h1>
+
+      <QRCode value={qrCode || "loading"} size={220} />
+
+      <p className="text-gray-700 mt-4">
+        Refreshing in: <strong>{expiresIn}s</strong>
+      </p>
+
+      <p className="text-sm text-gray-500 mt-2">
+        Students must scan this QR to mark attendance.
+      </p>
+    </div>
+  );
+}
